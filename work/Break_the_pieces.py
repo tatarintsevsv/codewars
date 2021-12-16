@@ -4,35 +4,67 @@ USE_BREAK_DISPLAY = True        # to get more details in the console when a test
 
 def arr_print(a):
     for i in range(len(a)):
-        print('.'+''.join(a[i])+'.')
+        if ''.join(a[i]).replace(' ','')!='':
+            print('.'+''.join(a[i])+'.')
 
 import numpy as np
 from copy import deepcopy
-import sys
+import datetime
 
+test_started = datetime.datetime.now()
 
 def break_evil_pieces(shape):
+    def fill_empty_space(i=0, j=0):
+        shape_array[i][j] = '#'
+        fill_list = []
+        for di in (0, 1, -1):
+            for dj in (1, 0, -1):
+                if abs(di)+abs(dj) == 2 or di+dj == 0:
+                    continue
+                if (i + di) > len(shape_array) - 1 or (j + dj) > len(shape_array[0]) - 1 or j < 0 or i < 0:
+                    continue
+                c = 1
+                while ((i + di*c) < len(shape_array) - 1) and ((j + dj*c) < len(shape_array[0]) - 1) and (i + di*c) >= 0 and (j + dj*c) >= 0:
+                    if shape_array[i + di*c][j + dj*c] != ' ':
+                        break
+                    shape_array[i + di*c][j + dj*c] = '#'
+                    fill_list.append((i + di*c, j + dj*c))
+                    c += 1
+        for c in fill_list:
+            fill_empty_space(c[0],c[1])
+        return
+
     def get_mask():
         def fill(i, j):
             arr[i][j] = '*'
-            for di in (-1, 0, 1):
-                for dj in (-1, 0, 1):
+            fill_list = []
+            for di in (0, 1, -1):
+                for dj in (1, 0, -1):
                     if (i + di) > len(arr) - 1 or (j + dj) > len(arr[0]) - 1 or j < 0 or i < 0:
                         continue
-                    if arr[i + di][j + dj] in ('+', '|', '-', '*'):
-                        arr[i + di][j + dj] = '*'
+                    if arr[i + di][j + dj] in ('+', '|', '-'):
+                        arr[i + di][j + dj] = '%'
                         continue
-                    if arr[i + di][j + dj] == ' ':
-                        fill(i + di, j + dj)
-            return False
-
+                    if arr[i + di][j + dj] == '#':
+                        arr[i + di][j + dj] = 'X'
+                        return
+                    c = 1
+                    while ((i + di * c) < len(arr) - 1) and ((j + dj * c) < len(arr[0]) - 1) and (i + di * c) >= 0 and (j + dj * c) >= 0:
+                        if arr[i + di * c][j + dj * c] != ' ':
+                            break
+                        arr[i + di * c][j + dj * c] = '*'
+                        fill_list.append((i + di * c, j + dj * c))
+                        c += 1
+            for c in fill_list:
+                fill(c[0], c[1])
+            return
         arr = deepcopy(shape_array)
         for i in range(len(arr)):
             if '+' in arr[i]:
                 idx = arr[i].index('+')
-                if arr[i + 1][idx + 1] == ' ':
+                if arr[i + 1][idx + 1] == ' ' and arr[i + 1][idx] == '|' and arr[i][idx + 1] == '-':
+                    arr[i][idx] = '*'
                     fill(i + 1, idx + 1)
-                arr[i][idx] = '*'
                 return arr, i, idx
         return [], 0, 0
 
@@ -56,6 +88,8 @@ def break_evil_pieces(shape):
 
     def compress_figure(figure):
         figure = remove_pluses(figure)
+        if figure == '':
+            return ''
         lines = [' '+l for l in figure.split('\n') if len(l.replace(' ', '')) > 0]
         res = []
         maxlen = len(max(lines, key=len))
@@ -93,7 +127,8 @@ def break_evil_pieces(shape):
         figure = '\n'.join([''.join(l).rstrip()[1:] for l in arr[1:-1]]).rstrip('\n')
         return figure
 
-    sys.setrecursionlimit(25000)
+    started = datetime.datetime.now()
+    print(started.strftime('%M:%S.%f'))
     print(shape)
 
     maxlen = len(max(shape.split('\n'), key=len))
@@ -105,11 +140,12 @@ def break_evil_pieces(shape):
     shape = ' ' * (maxlen + 2) + '\n' + ftmp + ' ' * (maxlen + 2)
 
     f = expand_shape(shape)
-
     shape_array = [list(l) for l in f.split('\n')]
-    figures = []
+    fill_empty_space()
 
+    figures = []
     while True:
+        sm = datetime.datetime.now()
         m, fig_i, fig_j = get_mask()
         if (fig_i, fig_j) == (0, 0):
             break
@@ -117,39 +153,108 @@ def break_evil_pieces(shape):
             shape_array[fig_i][fig_j] = ' '
             continue
         figure = ''
+        tmp = np.array(m)
+        count = tmp[tmp == 'X'].shape[0]
+        mask_count = tmp[tmp == '*'].shape[0]
+        if count != 0 or mask_count == 0 :
+            shape_array[fig_i][fig_j] = ' '
+            continue
         for i in range(1, len(m) - 2):
             for j in range(1, len(m[i]) - 2):
-                figure += shape_array[i][j] if m[i][j] == '*' else ' '
+                figure += shape_array[i][j] if m[i][j] in ('*', '%') else ' '
+                if m[i][j] == '*':
+                    shape_array[i][j] = '#'
             figure += '\n'
         shape_array[fig_i][fig_j] = ' '
-        print(figure)
+        #arr_print(m)
+        #print('=========')
+        #arr_print(shape_array)
         figures.append(figure)
+        du = datetime.datetime.now() - sm
+        print(f"fig: {du.seconds}.{du.microseconds}")
+
     res = []
     for f in figures:
-        res.append(compress_figure(f))
+        compressed = compress_figure(f)
+        if len(compressed)>0:
+            res.append(compressed)
+    dur = datetime.datetime.now() - started
+    print(f"duration: {dur.seconds}.{dur.microseconds}")
+    dur = datetime.datetime.now() - test_started
+    print(f"whole tests: {dur.seconds}.{dur.microseconds}")
     return res
 
 
 shape = """
-
-         +-+                +-+                +-+         
-         +-+                | |                +-+         
-                            ++++                           
-                            ++++                           
-                            ++++                           
-        +----+              ++++                           
-++      |+--+|  ++-------------+      ++                 ++
-||      ||++||  ||   +--------+|      ||                 ||
-++      ||++||  ++---+   +---+||      ++                 ++
-        |+--+|           |+-+|||                           
-        +----+           || ++||                           
-                         |+---+|                           
-                         +-----+                           
-         +-+                +-+                +-+         
-         +-+                +-+                +-+         
++--------+-+----------------+-+----------------+-+--------+
+|        | |                | |                | |        |
+|        | |                | |                | |        |
+|        | |                | |           +----+ |        |
+|      +-+ +-+            +-+ +-+         |+-----+    ++  |
+|      |     |            |     |         ||          ||  |
++------+     +------------+     +------+  ||  +-------+| ++
+|                                      |  ||  |     +--+ ||
++--------------------------------------+  ||  |     +---+++
+|                                         ||  +--------+| |
+|                                         |+-----------+| |
+|                                         +----+ +------+ |
+|                                              | |        |
+|        +-+                +-+                | |        |
+|        | |                | |                +-+        |
+|        | |                | |                           |
+|        | +-----+          | +-----+                     |
+|        |    +-+|          |    +-+|                     |
+|        +-+  | ||          +-+  | ||                     |
++-----+    +--+ |+-------+    +--+ |+--+                 ++
+|     +--+      |        +--+      |   |                 ||
++----+   +---+  +-------+   +---+  +---+                 ++
+|    |       |          |       |                         |
+|    +---+ +-+          +---+ +-+                         |
+|        | |                | |                           |
+|        | |                | |                           |
+|        | |                | |                +-+        |
+|        +-+                | |                | |        |
+|  +-----+ |    ++          ++++               | |        |
+|  +-++----+    ++          ++++               | |        |
+|    ++                     ++++             +-+ +-+      |
+|    ||                     ++++             |     |      |
+++   |+------------------------+      +------+     +------+
+||   |               +--------+|      |                   |
+++   +---+ +---------+   +---+||      +-------------------+
+|        | |             |+-+|||                          |
+|        | |             || ++||                          |
+|        | |             |+---+|                          |
+|        | |             +-----+                          |
+|        | |                +-+                +-+        |
+|        +-+                | |                | |        |
+|                           ++++               | |        |
+|                           ++++               | +-----+  |
+|                           ++++               |    +-+|  |
+|       +----+              ++++               +-+  | ||  |
+++      |+--+|  ++-------------+      +-----+    +--+ |+--+
+||      ||++||  ||   +--------+|      |     +--+      |   |
+++      ||++||  ++---+   +---+||      +----+   +---+  +---+
+|       |+--+|           |+-+|||           |       |      |
+|       +----+           || ++||           +---+ +-+      |
+|                        |+---+|               | |        |
+|                        +-----+               | |        |
+|        +-+                +-+                | |        |
+|        | |                +-+                +-+        |
+|        | |          +-----+ |    ++                     |
+|        | |          +-++----+    ++                     |
+|      +-+ +-+          ++                                |
+|      |     |          ||                                |
++------+     +------+   |+-------------+                 ++
+|                   |   |              |                 ||
++-------------------+   +---+ +--------+                 ++
+|                           | |                           |
+|                           | |                           |
+|                           | |                           |
+|                           | |                           |
+|        +-+                | |                +-+        |
++--------+-+----------------+-+----------------+-+--------+
 """.strip('\n')
-
-
+print('==============================================================================')
 res = break_evil_pieces(shape)
-for r in res:
-    print(r)
+#for r in res:
+#    print(f'---------------\n{r}\n---------------------')
