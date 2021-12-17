@@ -1,3 +1,5 @@
+# https://www.codewars.com/kata/56e02d5f2ebcd50083001300/train/python
+
 class Property:
     def __new__(cls, *args, **kwargs):
         t = type(args)
