@@ -1,5 +1,5 @@
 #https://www.codewars.com/kata/591f3a2a6368b6658800020e
-USE_BREAK_DISPLAY = True        # to get more details in the console when a test fails
+USE_BREAK_DISPLAY = True        # to get more details in the console when a test.py fails
 
 
 def arr_print(a):
