@@ -31,7 +31,7 @@ def solve_mine(map, n):
         cnt=0
         mcnt=0
         mines, empty, res = [], [], []
-        for di in [-1,0,1]:
+        for di in [-1, 0, 1]:
             for dj in [-1, 0, 1]:
                 if i+di<0 or i+di>len(arr)-1:
                     continue
