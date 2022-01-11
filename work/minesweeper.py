@@ -6,8 +6,27 @@ def open(row, col):
         print(np.matrix(arr))
     return res
 import numpy as np
+import itertools
 
 def solve_mine(map, n):
+    def get_variants(i, j, num):
+        cnt = 0
+        f = []
+        for di in [-1,0,1]:
+            for dj in [-1, 0, 1]:
+                if i+di<0 or i+di>len(arr)-1:
+                    continue
+                if j+dj<0 or j+dj>len(arr[0])-1:
+                    continue
+                if arr[i+di][j+dj] == 'x':
+                    cnt += 1
+                if arr[i+di][j+dj] == '?':
+                    f.append((i+di, j+dj))
+        vars = []
+        if cnt < int(num):
+            vars = itertools.combinations(f, int(num)-cnt)
+        return vars
+
     def find_mines(i, j, num):
         cnt=0
         mcnt=0
@@ -44,8 +63,13 @@ def solve_mine(map, n):
                     for f in can_open:
                         arr[f[0]][f[1]] = open(f[0], f[1])
                     loop |= len(can_open) > 0
-                    print(np.matrix(arr))
-                    print('\n')
+        print("\n")
+        print(np.matrix(arr))
+        for i in range(len(arr)):
+            for j in range(len(arr[0])):
+                if arr[i][j].isnumeric():
+                    vars = get_variants(i,j,arr[i][j])
+                    print(i,j, " --> ", list(vars))
 
     mines = n
     for i in range(len(arr)):
