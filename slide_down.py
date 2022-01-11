@@ -1,14 +1,16 @@
 # https://www.codewars.com/kata/551f23362ff852e2ab000037/train/python
 
-def longest_slide_down(pyramid, pyrasum=[],lvl=0):
-    if lvl==0:
-        pyrasum.append(pyramid[0][0])
-    if lvl<len(pyramid)-1:
-        tmp = []*len(pyramid[lvl+1])
+def longest_slide_down(pyramid):
+    pyrasum = []
+    pyrasum.append([pyramid[0][0]])
+    for lvl in range(len(pyramid)-1):
+        tmp = [0]*len(pyramid[lvl+1])
         for i in range(len(pyramid[lvl+1])):
-            tmp.append([])
-        return longest_slide_down(pyramid,tmp,lvl+1)
-    return max(sums)
+            v1 = (pyrasum[lvl][i - 1] if i > 0 else 0) + pyramid[lvl + 1][i]
+            v2 = (pyrasum[lvl][i] if i < len(pyrasum[lvl]) else 0) + pyramid[lvl + 1][i]
+            tmp[i] = max(v1,v2)
+        pyrasum.append(tmp)
+    return max(pyrasum[-1])
 
 import codewars_test as test
 
@@ -17,7 +19,7 @@ def test_longest_slide_down():
     @test.it('should work for small pyramids')
     def small_pyramids():
         test.assert_equals(longest_slide_down([[3], [7, 4], [2, 4, 6], [8, 5, 9, 3]]), 23)
-    quit()
+
     @test.it('should work for medium pyramids')
     def medium_pyramids():
         test.assert_equals(longest_slide_down([
