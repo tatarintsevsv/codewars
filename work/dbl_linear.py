@@ -1,3 +1,4 @@
+# https://www.codewars.com/kata/5672682212c8ecf83e000050/train/python
 def dbl_linear(n):
     line = {1}
     prev = 0
